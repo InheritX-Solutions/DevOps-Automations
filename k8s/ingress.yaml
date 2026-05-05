@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: showcase-ingress
+  annotations:
+    # Requires an Ingress controller like NGINX installed on the cluster
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: demo.devops-showcase.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: showcase-api-service
+            port:
+              number: 80

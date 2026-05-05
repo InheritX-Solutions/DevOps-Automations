@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: showcase-api-config
+  labels:
+    app: showcase-api
+data:
+  # Non-sensitive configuration data
+  NODE_ENV: "production"
+  DB_HOST: "showcase-db-service"
+  DB_PORT: "5432"
+  REDIS_HOST: "showcase-cache-service"
+  LOG_LEVEL: "info"

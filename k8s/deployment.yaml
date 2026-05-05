@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: showcase-api
+  labels:
+    app: showcase-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: showcase-api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: showcase-api
+    spec:
+      containers:
+        - name: api-container
+          image: devops-showcase/api-service:latest
+          imagePullPolicy: IfNotPresent # Or Always for real registries
+          ports:
+            - containerPort: 3000
+          
+          # Injecting configuration
+          envFrom:
+            - configMapRef:
+                name: showcase-api-config
+            - secretRef:
+                name: showcase-api-secret
+          
+          # Resource Management
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+              
+          # Health Checks
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 5

@@ -1,0 +1,81 @@
+version: '3.8'
+
+# ==============================================================================
+# Docker Compose demonstrating a multi-tier application environment
+# ==============================================================================
+
+services:
+  # 1. Web Application Service
+  api-service:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    image: devops-showcase/api-service:latest
+    container_name: showcase-api
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=database
+      - DB_PORT=5432
+      - DB_USER=showcase_user
+      - DB_PASSWORD=secure_password
+      - REDIS_HOST=cache
+    depends_on:
+      database:
+        condition: service_healthy
+      cache:
+        condition: service_started
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # 2. Database Service (PostgreSQL)
+  database:
+    image: postgres:15-alpine
+    container_name: showcase-db
+    environment:
+      POSTGRES_USER: showcase_user
+      POSTGRES_PASSWORD: secure_password
+      POSTGRES_DB: showcase_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U showcase_user -d showcase_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 3. Cache Service (Redis)
+  cache:
+    image: redis:7-alpine
+    container_name: showcase-cache
+    command: redis-server --requirepass cache_password
+    volumes:
+      - redisdata:/data
+    networks:
+      - app-network
+    restart: unless-stopped
+
+# --- Named Volumes ---
+# Defines persistent storage that survives container restarts/recreations
+volumes:
+  pgdata:
+    driver: local
+  redisdata:
+    driver: local
+
+# --- Custom Networks ---
+# Isolates communication between these services
+networks:
+  app-network:
+    driver: bridge
